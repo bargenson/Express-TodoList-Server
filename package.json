@@ -1,0 +1,10 @@
+{
+	"name": "todolist-server",
+	"description": "A simple server app for a JS.everywhere() Hands-on.",
+	"version": "0.0.1",
+	"private": true,
+	"dependencies": {
+		"express": "3.0.0",
+		"redis": "*"
+	}
+}
