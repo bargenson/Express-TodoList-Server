@@ -47,6 +47,6 @@ app.get('/todos/:id', function(req, res){
 });
 
 var port = process.env.PORT || 3000;
-app.listen(3000, function() {
+app.listen(port, function() {
 	console.log('Listening on port 3000');
 });
