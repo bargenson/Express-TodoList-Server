@@ -1,7 +1,8 @@
 var todos = [];
 
 var redis = require('redis'),
-	redisClient = redis.createClient(),
+	url = require("url"),
+	redisClient = buildRedisClient(),
 	redisKey = "todos";
 
 redisClient.on("error", function (err) {
@@ -42,5 +43,17 @@ var todoAdapter = {
 	}
 
 };
+
+function buildRedisClient() {
+	var redisUrl, client;
+	if(process.env.REDISTOGO_URL) {
+		redisUrl = url.parse(process.env.REDISTOGO_URL);
+		client = redis.createClient(redisUrl.port, redisUrl.hostname);
+		client.auth(rtg.auth.split(":")[1]);
+	} else {
+		client = redis.createClient();
+	}
+	return client;
+}
 
 exports.todoAdapter = todoAdapter;
