@@ -4,7 +4,7 @@ var express = require('express'),
 
 var app = express();
 
-app.use(express.bodyParser());
+addMiddlewares();
 
 app.get('/todos', function(req, res){
 	todoAdapter.getTodos(function(err, result) {
@@ -46,7 +46,24 @@ app.get('/todos/:id', function(req, res){
 	});
 });
 
-var port = process.env.PORT || 3000;
-app.listen(port, function() {
-	console.log('Listening on port 3000');
-});
+startListen();
+
+function startListen() {
+	var port = process.env.PORT || 3000;
+	app.listen(port, function() {
+		console.log('Listening on port 3000');
+	});
+}
+
+function addMiddlewares() {
+	app.use(express.bodyParser());
+	app.use(addCorsHeaders);
+}
+
+function addCorsHeaders(req, res, next) {
+	res.header('Access-Control-Allow-Origin', "*");
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+
+    next();
+}
