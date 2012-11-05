@@ -71,5 +71,3 @@ function addCorsHeaders(req, res, next) {
 
     next();
 }
-
-console.log(app.routes);
