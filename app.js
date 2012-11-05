@@ -32,7 +32,7 @@ app.post('/todos', function(req, res){
 				res.send(400, err.message);
 			} else {
 				res.set('Location', '/todos/' + index);
-				res.send(201);
+				res.send(201, JSON.stringify({ todoId: index }));
 			}
 		}
 	);
