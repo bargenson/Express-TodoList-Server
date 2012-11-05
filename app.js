@@ -6,6 +6,10 @@ var app = express();
 
 addMiddlewares();
 
+app.options("*", function(req, res) {
+	res.send(200);
+});
+
 app.get('/todos', function(req, res){
 	todoAdapter.getTodos(function(err, result) {
 		if(err) {
@@ -67,3 +71,5 @@ function addCorsHeaders(req, res, next) {
 
     next();
 }
+
+console.log(app.routes);
