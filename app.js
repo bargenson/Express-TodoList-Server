@@ -1,6 +1,18 @@
+Array.prototype.remove = function(item) {
+	for(var i = 0; i < this.length; i++) {
+        if(this[i] === item) {
+            this.splice(i, 1);
+            break;
+        }
+    }
+};
+
+
 var express = require('express'),
 	todoAdapter = require('./todo_adapter').todoAdapter,
-	Todo = require('./todo').Todo;
+	Todo = require('./todo').Todo,
+	connections = [],
+	sseDataId = 0;
 
 var app = express();
 
@@ -22,20 +34,20 @@ app.get('/todos', function(req, res){
 });
 
 app.post('/todos', function(req, res){
-	todoAdapter.addTodo(
-		new Todo(
-			req.body.title,
-			req.body.description,
-			req.body.deadLine
-		), function(err, index) {
-			if(err) {
-				res.send(400, err.message);
-			} else {
-				res.set('Location', '/todos/' + index);
-				res.send(201, JSON.stringify({ todoId: index }));
-			}
-		}
+	var todo = new Todo(
+		req.body.title,
+		req.body.description,
+		req.body.deadLine
 	);
+	todoAdapter.addTodo(todo, function(err, index) {
+		if(err) {
+			res.send(400, err.message);
+		} else {
+			res.set('Location', '/todos/' + index);
+			res.send(201, JSON.stringify({ todoId: index }));
+			sendNewTodoToStream(todo);
+		}
+	});
 });
 
 app.get('/todos/:id', function(req, res){
@@ -49,6 +61,20 @@ app.get('/todos/:id', function(req, res){
 			res.send(404, "The todo with ID=" + todoId + " doesn't exist.");
 		}
 	});
+});
+
+app.get('/stream', function(req, res) {
+	if(runOnHeroku()) {
+		res.send(500, "SSE is not supported on Heroku. Use the local version instead.");
+	} else {
+		res.writeHead(200, {
+			'Content-Type': 'text/event-stream',
+			'Connection': 'keep-alive',
+			'Cache-Control': 'no-cache'
+		});
+		res.write('id\n\n');
+		addToStream(req, res);
+	}
 });
 
 startListen();
@@ -68,7 +94,30 @@ function addMiddlewares() {
 function addCorsHeaders(req, res, next) {
 	res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type,X-Requested-With');
+    res.header('Access-Control-Allow-Headers', 'Content-Type,X-Requested-With,Accept,Connection,Pragma,Cache-Control');
 
     next();
+}
+
+function addToStream(req, res) {
+	var clear = function() {
+		res.end();
+		connections.remove(res);
+	};
+	req.on('timeout', clear);
+	req.on('error', clear);
+	req.on('close', clear);
+	connections.push(res);
+}
+
+function sendNewTodoToStream(todo) {
+	sseDataId++;
+	connections.forEach( function(response) {
+		response.write("id: " + sseDataId + "\n");
+		response.write("data: " + JSON.stringify(todo) + "\n\n");
+	});
+}
+
+function runOnHeroku() {
+	return process.env.PORT;
 }
